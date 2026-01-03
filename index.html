@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>문답형 체크리스트 생성기</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f3f4f6;
+            overflow: hidden;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        .checklist-item {
+            transition: all 0.2s ease;
+        }
+
+        .checklist-item span {
+            line-height: 1.4;
+            display: inline-block; 
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .img-placeholder:hover .overlay {
+            opacity: 1;
+        }
+        
+        .custom-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .custom-checkbox i {
+            transform: scale(0);
+            transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .custom-checkbox.checked {
+            background-color: currentColor;
+        }
+        
+        .custom-checkbox.checked i {
+            transform: scale(1);
+            color: white;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            margin-top: -6px; 
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row text-slate-800">
+
+    <!-- Sidebar / Control Panel -->
+    <aside class="w-full md:w-96 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-10 flex-shrink-0">
+        <div class="p-5 border-b border-slate-100 flex-shrink-0">
+            <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-indigo-600"></i>
+                체크리스트 생성기
+            </h1>
+            <p class="text-xs text-slate-500 mt-1">질문을 입력하고 스타일을 꾸며보세요.</p>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+            
+            <!-- Questions Input -->
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">질문 리스트</label>
+                <textarea id="questionInput" class="w-full h-32 p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none transition" placeholder="질문을 엔터로 구분하여 입력하세요"></textarea>
+            </div>
+
+            <!-- Style Controls -->
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-3">스타일 설정</label>
+                
+                <!-- Font Settings -->
+                <div class="space-y-4 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-xs text-slate-500">폰트 크기</span>
+                            <span id="fontSizeVal" class="text-xs font-mono text-slate-600">16px</span>
+                        </div>
+                        <input type="range" id="fontSizeRange" min="12" max="24" value="16" class="w-full" oninput="updateStyles()">
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-xs text-slate-500">줄 간격</span>
+                            <span id="lineGapVal" class="text-xs font-mono text-slate-600">12px</span>
+                        </div>
+                        <input type="range" id="lineGapRange" min="4" max="40" value="12" class="w-full" oninput="updateStyles()">
+                    </div>
+
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-1">폰트 (PC 설치된 폰트명 입력)</span>
+                        <input type="text" id="fontFamilyInput" class="w-full p-2 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none" placeholder="예: 맑은 고딕, Malgun Gothic, NanumSquare" oninput="updateFontFamily()">
+                        <p class="text-[10px] text-slate-400 mt-1">* 폰트명이 정확해야 적용됩니다.</p>
+                    </div>
+                </div>
+
+                <!-- Color Settings -->
+                <div class="grid grid-cols-2 gap-y-3 gap-x-2">
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-1">배경색</span>
+                        <div class="flex items-center gap-1">
+                            <input type="color" id="bgColorPicker" value="#ffffff" class="w-full h-8 rounded cursor-pointer border-0 p-0">
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-1">텍스트</span>
+                        <div class="flex items-center gap-1">
+                            <input type="color" id="textColorPicker" value="#334155" class="w-full h-8 rounded cursor-pointer border-0 p-0">
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-1">왼쪽 체크박스</span>
+                        <div class="flex items-center gap-1">
+                            <input type="color" id="leftAccentColorPicker" value="#6366f1" class="w-full h-8 rounded cursor-pointer border-0 p-0">
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-1">오른쪽 체크박스</span>
+                        <div class="flex items-center gap-1">
+                            <input type="color" id="rightAccentColorPicker" value="#ec4899" class="w-full h-8 rounded cursor-pointer border-0 p-0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="pt-4 border-t border-slate-100">
+                <label class="block text-sm font-bold text-slate-700 mb-2">데이터 관리</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportJSON()" class="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium transition">
+                        <i class="fa-solid fa-download"></i> JSON 저장
+                    </button>
+                    <label class="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium transition cursor-pointer">
+                        <i class="fa-solid fa-upload"></i> JSON 불러오기
+                        <input type="file" id="jsonInput" accept=".json" onchange="importJSON(this)">
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-5 border-t border-slate-100 bg-slate-50 flex-shrink-0">
+            <button onclick="downloadImage()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-image"></i> 이미지 저장
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Canvas Area -->
+    <main class="flex-1 bg-slate-200 overflow-auto flex justify-center p-10">
+        
+        <div id="canvas-target" class="shadow-2xl flex-shrink-0 flex flex-col" 
+             style="width: 900px; background-color: #ffffff; padding: 50px; min-height: 600px; height: fit-content;">
+            
+            <!-- Header Area -->
+            <div class="mb-10 text-center relative z-10">
+                <input type="text" id="canvasTitle" value="캐릭터 관계 체크리스트" 
+                    class="text-4xl font-bold text-center w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-black/5 rounded py-2"
+                    style="color: #334155; font-family: inherit;">
+                <p class="text-center opacity-60 mt-2 text-base editable outline-none focus:ring-2 focus:ring-black/5 rounded px-2 inline-block" 
+                   contenteditable="true" style="color: #334155; font-family: inherit;">
+                   (클릭하여 부제를 입력하세요)
+                </p>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="flex gap-10 items-stretch flex-1">
+                
+                <!-- Left Character Column -->
+                <div class="w-32 flex flex-col items-center gap-4 flex-shrink-0">
+                    <div class="relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('leftImgInput').click()">
+                        <img id="leftImgDisplay" src="" class="w-full h-full object-cover hidden">
+                        <div id="leftImgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-500 transition">
+                            <i class="fa-solid fa-plus text-2xl mb-2"></i>
+                            <span class="text-xs font-medium">Add Image</span>
+                        </div>
+                        <input type="file" id="leftImgInput" accept="image/*" onchange="handleImageUpload(this, 'leftImgDisplay', 'leftImgPlaceholder')">
+                    </div>
+                    <input type="text" value="캐릭터 A" class="text-center w-full text-lg font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none py-1 transition" style="color: #334155; font-family: inherit;">
+                </div>
+
+                <!-- Questions List (Center) -->
+                <div class="flex-1 flex flex-col">
+                    <div id="checklist-container" class="flex flex-col h-full justify-center">
+                        <div class="text-center text-slate-400 py-20">
+                            좌측 메뉴에서 질문을 입력해주세요.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Character Column -->
+                <div class="w-32 flex flex-col items-center gap-4 flex-shrink-0">
+                    <div class="relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('rightImgInput').click()">
+                        <img id="rightImgDisplay" src="" class="w-full h-full object-cover hidden">
+                        <div id="rightImgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-500 transition">
+                            <i class="fa-solid fa-plus text-2xl mb-2"></i>
+                            <span class="text-xs font-medium">Add Image</span>
+                        </div>
+                        <input type="file" id="rightImgInput" accept="image/*" onchange="handleImageUpload(this, 'rightImgDisplay', 'rightImgPlaceholder')">
+                    </div>
+                    <input type="text" value="캐릭터 B" class="text-center w-full text-lg font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none py-1 transition" style="color: #334155; font-family: inherit;">
+                </div>
+
+            </div>
+
+            <!-- Footer / Watermark -->
+            <div class="mt-16 text-center opacity-30 text-xs font-mono" id="watermark" style="color: #334155;">
+                Created with Checklist Maker 
+                <a href="https://x.com/bb_uu_t" target="_blank" class="hover:underline" style="color: inherit; font-weight: 600;">@bb_uu_t</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Overlay for Loading -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 text-white flex-col backdrop-blur-sm">
+        <div class="bg-white/10 p-6 rounded-2xl flex flex-col items-center backdrop-blur-md border border-white/20">
+            <i class="fa-solid fa-spinner fa-spin text-3xl mb-4 text-indigo-400"></i>
+            <span id="loadingText" class="font-medium">처리 중...</span>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const questionInput = document.getElementById('questionInput');
+        const checklistContainer = document.getElementById('checklist-container');
+        const canvasTarget = document.getElementById('canvas-target');
+        const canvasTitle = document.getElementById('canvasTitle');
+        
+        // Color Pickers
+        const bgColorPicker = document.getElementById('bgColorPicker');
+        const textColorPicker = document.getElementById('textColorPicker');
+        const leftAccentColorPicker = document.getElementById('leftAccentColorPicker');
+        const rightAccentColorPicker = document.getElementById('rightAccentColorPicker');
+
+        // Style Controls
+        const fontSizeRange = document.getElementById('fontSizeRange');
+        const lineGapRange = document.getElementById('lineGapRange');
+        const fontFamilyInput = document.getElementById('fontFamilyInput');
+
+        // State Store
+        let checklistState = {};
+
+        // Default Data
+        const defaultQuestions = `나는 질문에 성실하게 답할 것이다.
+현재 관계에 만족하고 있다.
+내가 상대를 더 좋아하고 있다.
+나는 상대를 신뢰한다.
+싸웠을 때 먼저 사과하는 편이다.
+상대를 위해 희생할 수 있다.
+좋은 것을 함께 나누고 싶다.
+상대방에게 바라는 점이 많다.`;
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            questionInput.value = defaultQuestions;
+            renderChecklist();
+            updateColors();
+            updateStyles();
+        });
+
+        // Event Listeners for Live Updates
+        questionInput.addEventListener('input', () => renderChecklist());
+        
+        bgColorPicker.addEventListener('input', updateColors);
+        textColorPicker.addEventListener('input', updateColors);
+        leftAccentColorPicker.addEventListener('input', updateColors);
+        rightAccentColorPicker.addEventListener('input', updateColors);
+
+        // Update Font Family
+        function updateFontFamily() {
+            const fontName = fontFamilyInput.value.trim();
+            if (fontName) {
+                canvasTarget.style.fontFamily = `"${fontName}", 'Noto Sans KR', sans-serif`;
+            } else {
+                canvasTarget.style.fontFamily = "'Noto Sans KR', sans-serif";
+            }
+        }
+
+        // Update Size & Spacing Styles
+        function updateStyles() {
+            const fontSize = fontSizeRange.value;
+            const lineGap = lineGapRange.value;
+
+            // Update Labels
+            document.getElementById('fontSizeVal').textContent = `${fontSize}px`;
+            document.getElementById('lineGapVal').textContent = `${lineGap}px`;
+
+            // Apply to Container
+            checklistContainer.style.gap = `${lineGap}px`;
+            
+            const items = checklistContainer.querySelectorAll('.checklist-item span');
+            items.forEach(item => {
+                item.style.fontSize = `${fontSize}px`;
+            });
+        }
+
+        // Update Colors
+        function updateColors() {
+            const bg = bgColorPicker.value;
+            const text = textColorPicker.value;
+            const leftAccent = leftAccentColorPicker.value;
+            const rightAccent = rightAccentColorPicker.value;
+
+            // Apply Background
+            canvasTarget.style.backgroundColor = bg;
+            
+            canvasTarget.style.color = text;
+            canvasTitle.style.color = text;
+            
+            // Apply Left Accent Color
+            document.querySelectorAll('.custom-checkbox.checkbox-left').forEach(box => {
+                box.style.color = leftAccent;
+                if (box.classList.contains('checked')) {
+                    box.style.backgroundColor = leftAccent;
+                } else {
+                    box.style.backgroundColor = 'transparent';
+                }
+            });
+
+            // Apply Right Accent Color
+            document.querySelectorAll('.custom-checkbox.checkbox-right').forEach(box => {
+                box.style.color = rightAccent;
+                if (box.classList.contains('checked')) {
+                    box.style.backgroundColor = rightAccent;
+                } else {
+                    box.style.backgroundColor = 'transparent';
+                }
+            });
+
+            // Re-apply to inputs
+            canvasTarget.querySelectorAll('input[type="text"]').forEach(inp => {
+                inp.style.color = text;
+            });
+            
+            // Placeholder/Subtitles
+            canvasTarget.querySelectorAll('.editable, #watermark').forEach(el => {
+                el.style.color = text;
+            });
+        }
+
+        // Render Checklist
+        function renderChecklist(restoreState = false) {
+            const text = questionInput.value.trim();
+            
+            if (!text) {
+                checklistContainer.innerHTML = '';
+                return;
+            }
+
+            const questions = text.split('\n');
+            checklistContainer.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                if (!q.trim()) return;
+
+                // State Management
+                const state = checklistState[index] || { left: false, right: false };
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between group checklist-item w-full';
+                row.style.padding = '4px 8px';
+                row.style.borderRadius = '6px';
+                
+                row.onmouseenter = () => row.style.backgroundColor = 'rgba(0,0,0,0.03)';
+                row.onmouseleave = () => row.style.backgroundColor = 'transparent';
+
+                // Left Checkbox
+                const leftBox = createCheckbox(state.left, 'left', (checked) => updateState(index, 'left', checked));
+
+                // Question Text
+                const qText = document.createElement('span');
+                qText.className = 'flex-1 text-center font-medium px-4 break-keep';
+                qText.textContent = q;
+                qText.style.fontSize = `${fontSizeRange.value}px`; // Init with current size
+                
+                // Right Checkbox
+                const rightBox = createCheckbox(state.right, 'right', (checked) => updateState(index, 'right', checked));
+
+                row.appendChild(leftBox);
+                row.appendChild(qText);
+                row.appendChild(rightBox);
+                checklistContainer.appendChild(row);
+            });
+            
+            updateColors();
+            updateStyles(); // Ensure gap/size is applied
+        }
+
+        function createCheckbox(isChecked, side, onClick) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `custom-checkbox checkbox-${side} ${isChecked ? 'checked' : ''}`;
+            
+            const icon = document.createElement('i');
+            icon.className = 'fa-solid fa-check text-white text-xs pointer-events-none';
+            
+            wrapper.appendChild(icon);
+
+            wrapper.onclick = () => {
+                const newState = !wrapper.classList.contains('checked');
+                if (newState) {
+                    wrapper.classList.add('checked');
+                } else {
+                    wrapper.classList.remove('checked');
+                }
+                updateColors();
+                onClick(newState);
+            };
+
+            return wrapper;
+        }
+
+        function updateState(index, side, value) {
+            if (!checklistState[index]) checklistState[index] = { left: false, right: false };
+            checklistState[index][side] = value;
+        }
+
+        function handleImageUpload(input, displayId, placeholderId) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById(displayId);
+                    const ph = document.getElementById(placeholderId);
+                    
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    ph.style.opacity = '0';
+                    ph.classList.add('opacity-0', 'hover:opacity-100', 'bg-black/20');
+                    ph.innerHTML = '<i class="fa-solid fa-pen text-white text-3xl drop-shadow-lg"></i>';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Export JSON
+        function exportJSON() {
+            const data = {
+                title: canvasTitle.value,
+                subtitle: document.querySelector('.editable').innerText,
+                questions: questionInput.value,
+                state: checklistState,
+                styles: {
+                    fontSize: fontSizeRange.value,
+                    lineGap: lineGapRange.value,
+                    fontFamily: fontFamilyInput.value
+                },
+                colors: {
+                    bg: bgColorPicker.value,
+                    text: textColorPicker.value,
+                    leftAccent: leftAccentColorPicker.value,
+                    rightAccent: rightAccentColorPicker.value
+                },
+                images: {
+                    left: document.getElementById('leftImgDisplay').src,
+                    right: document.getElementById('rightImgDisplay').src
+                },
+                charNames: {
+                    left: document.querySelectorAll('input[value="캐릭터 A"]')[0]?.value || "캐릭터 A",
+                    right: document.querySelectorAll('input[value="캐릭터 B"]')[0]?.value || "캐릭터 B"
+                }
+            };
+            
+            if (data.images.left && data.images.left.startsWith('http')) data.images.left = "";
+            if (data.images.right && data.images.right.startsWith('http')) data.images.right = "";
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "checklist_data.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        // Import JSON
+        function importJSON(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if(data.title) canvasTitle.value = data.title;
+                    if(data.subtitle) document.querySelector('.editable').innerText = data.subtitle;
+                    if(data.questions) questionInput.value = data.questions;
+                    if(data.state) checklistState = data.state;
+                    
+                    if(data.styles) {
+                        fontSizeRange.value = data.styles.fontSize || 16;
+                        lineGapRange.value = data.styles.lineGap || 12;
+                        fontFamilyInput.value = data.styles.fontFamily || "";
+                        updateFontFamily();
+                    }
+
+                    if(data.colors) {
+                        bgColorPicker.value = data.colors.bg || "#ffffff";
+                        textColorPicker.value = data.colors.text || "#334155";
+                        
+                        // Handle legacy JSON compatibility
+                        if (data.colors.accent) {
+                            leftAccentColorPicker.value = data.colors.accent;
+                            rightAccentColorPicker.value = data.colors.accent;
+                        } else {
+                            leftAccentColorPicker.value = data.colors.leftAccent || "#6366f1";
+                            rightAccentColorPicker.value = data.colors.rightAccent || "#ec4899";
+                        }
+                    }
+
+                    // Restore Images logic omitted for brevity (same as before)
+                    if(data.images) {
+                        if(data.images.left && data.images.left.length > 100) {
+                             const img = document.getElementById('leftImgDisplay');
+                             img.src = data.images.left;
+                             img.classList.remove('hidden');
+                             document.getElementById('leftImgPlaceholder').style.opacity = '0';
+                        }
+                        if(data.images.right && data.images.right.length > 100) {
+                             const img = document.getElementById('rightImgDisplay');
+                             img.src = data.images.right;
+                             img.classList.remove('hidden');
+                             document.getElementById('rightImgPlaceholder').style.opacity = '0';
+                        }
+                    }
+
+                    renderChecklist(true);
+                    updateColors();
+                    updateStyles();
+                    
+                    alert("데이터 로드가 완료되었습니다.");
+                } catch (err) {
+                    console.error(err);
+                    alert("데이터 로드 실패: 올바른 JSON 파일인지 확인해주세요.");
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        // --- Image Download with Enhanced Fixes (Convert Inputs to Divs) ---
+        function downloadImage() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            
+            document.querySelector('main').scrollTop = 0;
+
+            setTimeout(() => {
+                html2canvas(canvasTarget, {
+                    scale: 2, 
+                    backgroundColor: null,
+                    useCORS: true,
+                    allowTaint: true,
+                    width: 900,
+                    windowWidth: 900, 
+                    onclone: (clonedDoc) => {
+                        const clonedCanvas = clonedDoc.getElementById('canvas-target');
+                        
+                        const inputs = clonedCanvas.querySelectorAll('input[type="text"]');
+                        
+                        inputs.forEach(input => {
+                            const div = clonedDoc.createElement('div');
+                            div.innerText = input.value;
+                            div.className = input.className;
+                            
+                            const computedStyle = window.getComputedStyle(input);
+                            div.style.color = input.style.color;
+                            div.style.fontFamily = input.style.fontFamily;
+                            div.style.fontSize = input.style.fontSize || computedStyle.fontSize;
+                            div.style.fontWeight = "bold"; 
+                            div.style.textAlign = "center";
+                            div.style.width = "100%";
+                            div.style.backgroundColor = "transparent";
+                            div.style.border = "none";
+                            
+                            if (input.id === 'canvasTitle') {
+                                div.style.lineHeight = "1.5"; 
+                                div.style.padding = "10px 0"; 
+                                div.style.marginBottom = "10px";
+                            } else {
+                                div.style.padding = "5px 0";
+                            }
+                            
+                            input.parentNode.replaceChild(div, input);
+                        });
+
+                        const subtitle = clonedCanvas.querySelector('.editable');
+                        if(subtitle) subtitle.style.transform = "translateY(-9px)";
+
+                        const listItems = clonedCanvas.querySelectorAll('.checklist-item span');
+                        listItems.forEach(item => {
+                            item.style.transform = "translateY(-9px)"; 
+                            item.style.lineHeight = "1.3"; 
+                        });
+                        
+                        const checkIcons = clonedCanvas.querySelectorAll('.custom-checkbox i');
+                        checkIcons.forEach(icon => {
+                            icon.style.transform = "translateY(-9px) scale(1)"; 
+                        });
+
+                        const plusIcons = clonedCanvas.querySelectorAll('.group i.fa-plus'); 
+                        plusIcons.forEach(icon => {
+                             icon.style.transform = "translateY(-9px)";
+                        });
+
+                        const watermark = clonedCanvas.querySelector('#watermark');
+                        if(watermark) watermark.style.transform = "translateY(-9px)";
+                    }
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `character_checklist_${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                }).catch(err => {
+                    console.error(err);
+                    alert("저장 실패: " + err.message);
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                });
+            }, 300); 
+        }
+    </script>
+</body>
+</html>
