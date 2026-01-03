@@ -104,6 +104,15 @@
             background: #e2e8f0;
             border-radius: 2px;
         }
+        
+        /* Manual Object Fit Style */
+        .manual-object-fit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: none; /* Tailwind override */
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col md:flex-row text-slate-800">
@@ -229,9 +238,9 @@
                 <!-- Left Character Column -->
                 <div class="w-32 flex flex-col items-center gap-4 flex-shrink-0">
                     <div class="char-image-frame relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('leftImgInput').click()">
-                        <div id="leftImgDisplay" class="w-full h-full bg-cover bg-center hidden"></div>
+                        <img id="leftImgDisplay" class="manual-object-fit hidden">
                         
-                        <div id="leftImgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-500 transition">
+                        <div id="leftImgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-500 transition pointer-events-none">
                             <i class="fa-solid fa-plus text-2xl mb-2"></i>
                             <span class="text-xs font-medium">Add Image</span>
                         </div>
@@ -252,9 +261,9 @@
                 <!-- Right Character Column -->
                 <div class="w-32 flex flex-col items-center gap-4 flex-shrink-0">
                     <div class="char-image-frame relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('rightImgInput').click()">
-                        <div id="rightImgDisplay" class="w-full h-full bg-cover bg-center hidden"></div>
+                        <img id="rightImgDisplay" class="manual-object-fit hidden">
                         
-                        <div id="rightImgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-500 transition">
+                        <div id="rightImgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-500 transition pointer-events-none">
                             <i class="fa-solid fa-plus text-2xl mb-2"></i>
                             <span class="text-xs font-medium">Add Image</span>
                         </div>
@@ -484,18 +493,23 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const imgDiv = document.getElementById(displayId);
+                    const img = document.getElementById(displayId);
                     const ph = document.getElementById(placeholderId);
                     
                     // Set background image instead of src for object-fit cover behavior in html2canvas
                     const base64 = e.target.result;
-                    imgDiv.style.backgroundImage = `url(${base64})`;
+                    img.src = base64;
+                    
+                    // Wait for load to calculate dimensions
+                    img.onload = function() {
+                        fitImage(img);
+                    };
                     
                     // Store for JSON export
                     if(displayId.includes('left')) imageState.left = base64;
                     else imageState.right = base64;
 
-                    imgDiv.classList.remove('hidden');
+                    img.classList.remove('hidden');
                     
                     // Hide placeholder
                     ph.style.opacity = '0';
@@ -503,6 +517,29 @@
                     ph.innerHTML = '<i class="fa-solid fa-pen text-white text-3xl drop-shadow-lg"></i>';
                 }
                 reader.readAsDataURL(file);
+            }
+        }
+
+        // Helper function to simulate object-fit: cover manually
+        function fitImage(img) {
+            const parent = img.parentElement;
+            if(!parent) return;
+
+            const parentRatio = parent.clientWidth / parent.clientHeight;
+            const imgRatio = img.naturalWidth / img.naturalHeight;
+
+            // Reset styles
+            img.style.width = '';
+            img.style.height = '';
+
+            if (imgRatio > parentRatio) {
+                // Image is wider: fill height, auto width
+                img.style.height = '100%';
+                img.style.width = 'auto';
+            } else {
+                // Image is taller: fill width, auto height
+                img.style.width = '100%';
+                img.style.height = 'auto';
             }
         }
 
@@ -580,15 +617,17 @@
                     if(data.images) {
                         imageState = data.images;
                         if(data.images.left) {
-                             const imgDiv = document.getElementById('leftImgDisplay');
-                             imgDiv.style.backgroundImage = `url(${data.images.left})`;
-                             imgDiv.classList.remove('hidden');
+                             const img = document.getElementById('leftImgDisplay');
+                             img.src = data.images.left;
+                             img.classList.remove('hidden');
+                             img.onload = () => fitImage(img);
                              document.getElementById('leftImgPlaceholder').style.opacity = '0';
                         }
                         if(data.images.right) {
-                             const imgDiv = document.getElementById('rightImgDisplay');
-                             imgDiv.style.backgroundImage = `url(${data.images.right})`;
-                             imgDiv.classList.remove('hidden');
+                             const img = document.getElementById('rightImgDisplay');
+                             img.src = data.images.right;
+                             img.classList.remove('hidden');
+                             img.onload = () => fitImage(img);
                              document.getElementById('rightImgPlaceholder').style.opacity = '0';
                         }
                     }
@@ -607,7 +646,6 @@
             input.value = '';
         }
 
-        // --- Image Download with Enhanced Fixes (Convert Inputs to Divs) ---
         function downloadImage() {
             const overlay = document.getElementById('loadingOverlay');
             overlay.classList.remove('hidden');
@@ -617,7 +655,7 @@
 
             setTimeout(() => {
                 html2canvas(canvasTarget, {
-                    scale: 2, 
+                    scale: 3,
                     backgroundColor: null,
                     useCORS: true,
                     allowTaint: true,
