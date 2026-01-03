@@ -68,8 +68,9 @@
         }
         
         .custom-checkbox i {
-            transform: scale(0);
-            transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transform: scale(0.5);
+            opacity: 0;
+            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
         
         .custom-checkbox.checked {
@@ -78,6 +79,7 @@
         
         .custom-checkbox.checked i {
             transform: scale(1);
+            opacity: 1;
             color: white;
         }
 
@@ -226,8 +228,9 @@
                 
                 <!-- Left Character Column -->
                 <div class="w-32 flex flex-col items-center gap-4 flex-shrink-0">
-                    <div class="relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('leftImgInput').click()">
-                        <img id="leftImgDisplay" src="" class="w-full h-full object-cover hidden">
+                    <div class="char-image-frame relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('leftImgInput').click()">
+                        <div id="leftImgDisplay" class="w-full h-full bg-cover bg-center hidden"></div>
+                        
                         <div id="leftImgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-500 transition">
                             <i class="fa-solid fa-plus text-2xl mb-2"></i>
                             <span class="text-xs font-medium">Add Image</span>
@@ -248,8 +251,9 @@
 
                 <!-- Right Character Column -->
                 <div class="w-32 flex flex-col items-center gap-4 flex-shrink-0">
-                    <div class="relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('rightImgInput').click()">
-                        <img id="rightImgDisplay" src="" class="w-full h-full object-cover hidden">
+                    <div class="char-image-frame relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('rightImgInput').click()">
+                        <div id="rightImgDisplay" class="w-full h-full bg-cover bg-center hidden"></div>
+                        
                         <div id="rightImgPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 group-hover:text-indigo-500 transition">
                             <i class="fa-solid fa-plus text-2xl mb-2"></i>
                             <span class="text-xs font-medium">Add Image</span>
@@ -297,6 +301,9 @@
 
         // State Store
         let checklistState = {};
+
+        // Image Data Store (Base64)
+        let imageState = { left: null, right: null };
 
         // Default Data
         const defaultQuestions = `나는 질문에 성실하게 답할 것이다.
@@ -429,7 +436,7 @@
                 const qText = document.createElement('span');
                 qText.className = 'flex-1 text-center font-medium px-4 break-keep';
                 qText.textContent = q;
-                qText.style.fontSize = `${fontSizeRange.value}px`; // Init with current size
+                qText.style.fontSize = `${fontSizeRange.value}px`; 
                 
                 // Right Checkbox
                 const rightBox = createCheckbox(state.right, 'right', (checked) => updateState(index, 'right', checked));
@@ -441,7 +448,7 @@
             });
             
             updateColors();
-            updateStyles(); // Ensure gap/size is applied
+            updateStyles(); 
         }
 
         function createCheckbox(isChecked, side, onClick) {
@@ -477,11 +484,20 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const img = document.getElementById(displayId);
+                    const imgDiv = document.getElementById(displayId);
                     const ph = document.getElementById(placeholderId);
                     
-                    img.src = e.target.result;
-                    img.classList.remove('hidden');
+                    // Set background image instead of src for object-fit cover behavior in html2canvas
+                    const base64 = e.target.result;
+                    imgDiv.style.backgroundImage = `url(${base64})`;
+                    
+                    // Store for JSON export
+                    if(displayId.includes('left')) imageState.left = base64;
+                    else imageState.right = base64;
+
+                    imgDiv.classList.remove('hidden');
+                    
+                    // Hide placeholder
                     ph.style.opacity = '0';
                     ph.classList.add('opacity-0', 'hover:opacity-100', 'bg-black/20');
                     ph.innerHTML = '<i class="fa-solid fa-pen text-white text-3xl drop-shadow-lg"></i>';
@@ -508,18 +524,12 @@
                     leftAccent: leftAccentColorPicker.value,
                     rightAccent: rightAccentColorPicker.value
                 },
-                images: {
-                    left: document.getElementById('leftImgDisplay').src,
-                    right: document.getElementById('rightImgDisplay').src
-                },
+                images: imageState, // Save stored Base64 images
                 charNames: {
                     left: document.querySelectorAll('input[value="캐릭터 A"]')[0]?.value || "캐릭터 A",
                     right: document.querySelectorAll('input[value="캐릭터 B"]')[0]?.value || "캐릭터 B"
                 }
             };
-            
-            if (data.images.left && data.images.left.startsWith('http')) data.images.left = "";
-            if (data.images.right && data.images.right.startsWith('http')) data.images.right = "";
 
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
             const downloadAnchorNode = document.createElement('a');
@@ -566,18 +576,19 @@
                         }
                     }
 
-                    // Restore Images logic omitted for brevity (same as before)
+                    // Restore Images
                     if(data.images) {
-                        if(data.images.left && data.images.left.length > 100) {
-                             const img = document.getElementById('leftImgDisplay');
-                             img.src = data.images.left;
-                             img.classList.remove('hidden');
+                        imageState = data.images;
+                        if(data.images.left) {
+                             const imgDiv = document.getElementById('leftImgDisplay');
+                             imgDiv.style.backgroundImage = `url(${data.images.left})`;
+                             imgDiv.classList.remove('hidden');
                              document.getElementById('leftImgPlaceholder').style.opacity = '0';
                         }
-                        if(data.images.right && data.images.right.length > 100) {
-                             const img = document.getElementById('rightImgDisplay');
-                             img.src = data.images.right;
-                             img.classList.remove('hidden');
+                        if(data.images.right) {
+                             const imgDiv = document.getElementById('rightImgDisplay');
+                             imgDiv.style.backgroundImage = `url(${data.images.right})`;
+                             imgDiv.classList.remove('hidden');
                              document.getElementById('rightImgPlaceholder').style.opacity = '0';
                         }
                     }
@@ -612,6 +623,8 @@
                     allowTaint: true,
                     width: 900,
                     windowWidth: 900, 
+                    scrollX: 0,
+                    scrollY: 0,
                     onclone: (clonedDoc) => {
                         const clonedCanvas = clonedDoc.getElementById('canvas-target');
                         
@@ -643,6 +656,11 @@
                             input.parentNode.replaceChild(div, input);
                         });
 
+                        const uncheckIcons = clonedCanvas.querySelectorAll('.custom-checkbox:not(.checked) i');
+                        uncheckIcons.forEach(icon => {
+                            icon.style.visibility = 'hidden';
+                        });
+
                         const subtitle = clonedCanvas.querySelector('.editable');
                         if(subtitle) subtitle.style.transform = "translateY(-9px)";
 
@@ -652,7 +670,7 @@
                             item.style.lineHeight = "1.3"; 
                         });
                         
-                        const checkIcons = clonedCanvas.querySelectorAll('.custom-checkbox i');
+                        const checkIcons = clonedCanvas.querySelectorAll('.custom-checkbox.checked i');
                         checkIcons.forEach(icon => {
                             icon.style.transform = "translateY(-9px) scale(1)"; 
                         });
