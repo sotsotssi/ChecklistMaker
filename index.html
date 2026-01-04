@@ -121,10 +121,12 @@
     <aside class="w-full md:w-96 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-10 flex-shrink-0">
         <div class="p-5 border-b border-slate-100 flex-shrink-0">
             <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-list-check text-indigo-600"></i>
-                체크리스트 생성기
+                <i class="fa-solid fa-list-check text-indigo-600" aria-hidden="true"></i>
+                    체크리스트 생성기 
+                <a href="https://x.com/bb_uu_t" target="_blank" rel="noopener noreferrer">
+                    <span class="text-xs text-slate-500 mt-1">@bb_uu_t</span>
+                </a>
             </h1>
-            <p class="text-xs text-slate-500 mt-1">질문을 입력하고 스타일을 꾸며보세요.</p>
         </div>
 
         <div class="flex-1 overflow-y-auto p-5 space-y-6">
@@ -141,6 +143,15 @@
                 
                 <!-- Font Settings -->
                 <div class="space-y-4 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <!-- Image Toggle -->
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                        <span class="text-xs text-slate-500 font-bold">캐릭터 이미지 표시</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="showImagesToggle" class="sr-only peer" checked>
+                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
                     <div>
                         <div class="flex justify-between mb-1">
                             <span class="text-xs text-slate-500">폰트 크기</span>
@@ -222,7 +233,7 @@
              style="width: 900px; background-color: #ffffff; padding: 50px; min-height: 600px; height: fit-content;">
             
             <!-- Header Area -->
-            <div class="mb-10 text-center relative z-10">
+            <div class="mb-6 text-center relative z-10">
                 <input type="text" id="canvasTitle" value="캐릭터 관계 체크리스트" 
                     class="text-4xl font-bold text-center w-full bg-transparent border-none outline-none focus:ring-2 focus:ring-black/5 rounded py-2"
                     style="color: #334155; font-family: inherit;">
@@ -232,11 +243,22 @@
                 </p>
             </div>
 
+            <!-- Alternative Name Display (Visible when images hidden) -->
+            <div id="name-only-container" class="hidden w-full mb-8 px-12">
+                <div class="flex justify-between items-center">
+                    <input type="text" id="nameInputA_alt" value="캐릭터 A" class="text-center w-1/3 text-2xl font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none py-2 transition" style="color: #334155; font-family: inherit;">
+                    
+                    <span class="text-slate-300 font-bold text-lg opacity-50">&</span>
+                    
+                    <input type="text" id="nameInputB_alt" value="캐릭터 B" class="text-center w-1/3 text-2xl font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none py-2 transition" style="color: #334155; font-family: inherit;">
+                </div>
+            </div>
+
             <!-- Main Content Area -->
             <div class="flex gap-10 items-stretch flex-1">
                 
                 <!-- Left Character Column -->
-                <div class="w-32 flex flex-col items-center gap-4 flex-shrink-0">
+                <div id="leftColumn" class="w-32 flex flex-col items-center gap-4 flex-shrink-0 transition-all duration-300">
                     <div class="char-image-frame relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('leftImgInput').click()">
                         <img id="leftImgDisplay" class="manual-object-fit hidden">
                         
@@ -246,7 +268,7 @@
                         </div>
                         <input type="file" id="leftImgInput" accept="image/*" onchange="handleImageUpload(this, 'leftImgDisplay', 'leftImgPlaceholder')">
                     </div>
-                    <input type="text" value="캐릭터 A" class="text-center w-full text-lg font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none py-1 transition" style="color: #334155; font-family: inherit;">
+                    <input type="text" id="nameInputA_main" value="캐릭터 A" class="text-center w-full text-lg font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none py-1 transition" style="color: #334155; font-family: inherit;">
                 </div>
 
                 <!-- Questions List (Center) -->
@@ -259,7 +281,7 @@
                 </div>
 
                 <!-- Right Character Column -->
-                <div class="w-32 flex flex-col items-center gap-4 flex-shrink-0">
+                <div id="rightColumn" class="w-32 flex flex-col items-center gap-4 flex-shrink-0 transition-all duration-300">
                     <div class="char-image-frame relative group cursor-pointer w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-md bg-slate-100 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition" onclick="document.getElementById('rightImgInput').click()">
                         <img id="rightImgDisplay" class="manual-object-fit hidden">
                         
@@ -269,7 +291,7 @@
                         </div>
                         <input type="file" id="rightImgInput" accept="image/*" onchange="handleImageUpload(this, 'rightImgDisplay', 'rightImgPlaceholder')">
                     </div>
-                    <input type="text" value="캐릭터 B" class="text-center w-full text-lg font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none py-1 transition" style="color: #334155; font-family: inherit;">
+                    <input type="text" id="nameInputB_main" value="캐릭터 B" class="text-center w-full text-lg font-bold bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none py-1 transition" style="color: #334155; font-family: inherit;">
                 </div>
 
             </div>
@@ -296,6 +318,13 @@
         const checklistContainer = document.getElementById('checklist-container');
         const canvasTarget = document.getElementById('canvas-target');
         const canvasTitle = document.getElementById('canvasTitle');
+        const showImagesToggle = document.getElementById('showImagesToggle');
+        
+        // Name Inputs (Main & Alt)
+        const nameInputA_main = document.getElementById('nameInputA_main');
+        const nameInputB_main = document.getElementById('nameInputB_main');
+        const nameInputA_alt = document.getElementById('nameInputA_alt');
+        const nameInputB_alt = document.getElementById('nameInputB_alt');
         
         // Color Pickers
         const bgColorPicker = document.getElementById('bgColorPicker');
@@ -310,6 +339,7 @@
 
         // State Store
         let checklistState = {};
+        let saveCount = 0; // [New] 저장 횟수 카운터
 
         // Image Data Store (Base64)
         let imageState = { left: null, right: null };
@@ -330,7 +360,29 @@
             renderChecklist();
             updateColors();
             updateStyles();
+            setupNameSync();
         });
+
+        // Setup Name Synchronization
+        function setupNameSync() {
+            // A -> Alt A
+            nameInputA_main.addEventListener('input', (e) => {
+                nameInputA_alt.value = e.target.value;
+            });
+            // Alt A -> A
+            nameInputA_alt.addEventListener('input', (e) => {
+                nameInputA_main.value = e.target.value;
+            });
+            
+            // B -> Alt B
+            nameInputB_main.addEventListener('input', (e) => {
+                nameInputB_alt.value = e.target.value;
+            });
+            // Alt B -> B
+            nameInputB_alt.addEventListener('input', (e) => {
+                nameInputB_main.value = e.target.value;
+            });
+        }
 
         // Event Listeners for Live Updates
         questionInput.addEventListener('input', () => renderChecklist());
@@ -339,6 +391,25 @@
         textColorPicker.addEventListener('input', updateColors);
         leftAccentColorPicker.addEventListener('input', updateColors);
         rightAccentColorPicker.addEventListener('input', updateColors);
+
+        // Toggle Images
+        showImagesToggle.addEventListener('change', (e) => {
+            const leftCol = document.getElementById('leftColumn');
+            const rightCol = document.getElementById('rightColumn');
+            const nameContainer = document.getElementById('name-only-container');
+            
+            if (e.target.checked) {
+                // Show Images
+                leftCol.classList.remove('hidden');
+                rightCol.classList.remove('hidden');
+                nameContainer.classList.add('hidden');
+            } else {
+                // Hide Images, Show Name Header
+                leftCol.classList.add('hidden');
+                rightCol.classList.add('hidden');
+                nameContainer.classList.remove('hidden');
+            }
+        });
 
         // Update Font Family
         function updateFontFamily() {
@@ -407,7 +478,7 @@
             });
             
             // Placeholder/Subtitles
-            canvasTarget.querySelectorAll('.editable, #watermark').forEach(el => {
+            canvasTarget.querySelectorAll('.editable, #watermark, #name-only-container span').forEach(el => {
                 el.style.color = text;
             });
         }
@@ -496,7 +567,7 @@
                     const img = document.getElementById(displayId);
                     const ph = document.getElementById(placeholderId);
                     
-                    // Set background image instead of src for object-fit cover behavior in html2canvas
+                    // Set src
                     const base64 = e.target.result;
                     img.src = base64;
                     
@@ -550,6 +621,7 @@
                 subtitle: document.querySelector('.editable').innerText,
                 questions: questionInput.value,
                 state: checklistState,
+                showImages: showImagesToggle.checked, // Save toggle state
                 styles: {
                     fontSize: fontSizeRange.value,
                     lineGap: lineGapRange.value,
@@ -561,10 +633,10 @@
                     leftAccent: leftAccentColorPicker.value,
                     rightAccent: rightAccentColorPicker.value
                 },
-                images: imageState, // Save stored Base64 images
+                images: imageState, 
                 charNames: {
-                    left: document.querySelectorAll('input[value="캐릭터 A"]')[0]?.value || "캐릭터 A",
-                    right: document.querySelectorAll('input[value="캐릭터 B"]')[0]?.value || "캐릭터 B"
+                    left: nameInputA_main.value,
+                    right: nameInputB_main.value
                 }
             };
 
@@ -591,6 +663,32 @@
                     if(data.subtitle) document.querySelector('.editable').innerText = data.subtitle;
                     if(data.questions) questionInput.value = data.questions;
                     if(data.state) checklistState = data.state;
+                    
+                    // Restore names
+                    if(data.charNames) {
+                        nameInputA_main.value = data.charNames.left || "캐릭터 A";
+                        nameInputB_main.value = data.charNames.right || "캐릭터 B";
+                        nameInputA_alt.value = data.charNames.left || "캐릭터 A";
+                        nameInputB_alt.value = data.charNames.right || "캐릭터 B";
+                    }
+
+                    // Restore toggle state
+                    if(data.hasOwnProperty('showImages')) {
+                        showImagesToggle.checked = data.showImages;
+                        const leftCol = document.getElementById('leftColumn');
+                        const rightCol = document.getElementById('rightColumn');
+                        const nameContainer = document.getElementById('name-only-container');
+                        
+                        if (data.showImages) {
+                            leftCol.classList.remove('hidden');
+                            rightCol.classList.remove('hidden');
+                            nameContainer.classList.add('hidden');
+                        } else {
+                            leftCol.classList.add('hidden');
+                            rightCol.classList.add('hidden');
+                            nameContainer.classList.remove('hidden');
+                        }
+                    }
                     
                     if(data.styles) {
                         fontSizeRange.value = data.styles.fontSize || 16;
@@ -652,7 +750,7 @@
             overlay.classList.add('flex');
             
             document.querySelector('main').scrollTop = 0;
-
+            saveCount++;
             setTimeout(() => {
                 html2canvas(canvasTarget, {
                     scale: 3,
@@ -669,6 +767,9 @@
                         const inputs = clonedCanvas.querySelectorAll('input[type="text"]');
                         
                         inputs.forEach(input => {
+                            // Check if input is visible (to avoid processing hidden ones incorrectly, though display:none handles it)
+                            if (window.getComputedStyle(input).display === 'none') return;
+
                             const div = clonedDoc.createElement('div');
                             div.innerText = input.value;
                             div.className = input.className;
@@ -710,16 +811,33 @@
                         
                         const checkIcons = clonedCanvas.querySelectorAll('.custom-checkbox.checked i');
                         checkIcons.forEach(icon => {
-                            icon.style.transform = "translateY(-9px) scale(1)"; 
+                            if (saveCount > 1) {
+                                icon.style.transform = "translateY(-7px)";
+                            } else {
+                                icon.style.transform = "translateY(-9px)";
+                            } 
                         });
 
                         const plusIcons = clonedCanvas.querySelectorAll('.group i.fa-plus'); 
                         plusIcons.forEach(icon => {
-                             icon.style.transform = "translateY(-9px)";
+                            if (saveCount > 1) {
+                                icon.style.transform = "translateY(-7px)";
+                            } else {
+                                icon.style.transform = "translateY(-9px)";
+                            }
+
                         });
 
                         const watermark = clonedCanvas.querySelector('#watermark');
                         if(watermark) watermark.style.transform = "translateY(-9px)";
+
+                        const charFrames = clonedCanvas.querySelectorAll('.char-image-frame');
+                        charFrames.forEach(frame => {
+                            // Check if parent (column) is hidden
+                            if (!frame.parentElement.classList.contains('hidden')) {
+                                frame.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)";
+                            }
+                        });
                     }
                 }).then(canvas => {
                     const link = document.createElement('a');
